@@ -3,12 +3,13 @@
 #include <mpi.h>
 #include "matfuncs.h"
 #include "process.h"
-
-
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
 
 int main(int argc, char *argv[]){
 	int num;
-	MPI_File fpIn,fpOut;
+	
 	int rank,size;
 	int ierr;
 	
@@ -58,29 +59,26 @@ int main(int argc, char *argv[]){
 	int x,y,z;
 	int offset;
 	
-	//Init input and output files
-	ierr = MPI_File_open(MPI_COMM_WORLD,"in.bin",
-	MPI_MODE_RDONLY,MPI_INFO_NULL,&fpIn);
-	ierr = MPI_File_open(MPI_COMM_WORLD,"out.bin",
-	MPI_MODE_WRONLY,MPI_INFO_NULL,&fpOut);
+	int fpIn,fpOut;
 	
+	fpIn = open("in.bin",O_RDONLY);
+	fpOut = open("out.bin",O_WRONLY);
 	/*Each rank takes slices that are increments of
 	the num of ranks
 	*/
+	
 	for(z=z0+rank;z<z1;z=z+size){
 		for(y=y0;y<y1;y++){
 			for(x=x0;x<x1;x++){
-				offset = sizeof(int)*(c*y+x+
-				z*r*c);
+				offset = sizeof(int)*(c*y+x+z*r*c);
 				
-				MPI_File_read_at(fpIn,offset,&num,
-				1,MPI_INT,MPI_STATUS_IGNORE);
+				lseek(fpIn, offset, SEEK_SET);
+				read(fpIn, &num, sizeof(int));
 				
 				num = proc(num);
 				
-				MPI_File_write_at(fpOut,offset,&num,
-				1,MPI_INT,status);
-				
+				lseek(fpOut, offset, SEEK_SET);	
+				write(fpOut, &num, sizeof(int));
 				
 			} 
 		}
@@ -88,18 +86,25 @@ int main(int argc, char *argv[]){
 	
 	
 	//Close files
-	MPI_File_close(&fpIn);
-	MPI_File_close(&fpOut);
+	close(fpIn);
+	close(fpOut);
 	
 	//Output the new matrix with the master rank
+	
+	MPI_Barrier(MPI_COMM_WORLD);
+	
 	if(rank==0){
-		FILE *f;
-		f = fopen("out.bin","rb");
+		FILE *fpOut = fopen("out.bin","rb");
+		fseek(fpOut,0,SEEK_SET);
+		
 		printf("\nNew matrix:\n");
-		printmat(f,r,c,h);
-		fclose(f);
+		printmat(fpOut,r,c,h);
+	
+		fclose(fpOut);
+		
 	}
-
+	
+	
 	MPI_Finalize();
 	
 	
