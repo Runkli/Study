@@ -14,7 +14,7 @@ int main(int argc, char *argv[]){
 	int ierr;
 	
 	//generates a default 0 cube if the flag exists
-	if(argc==8){
+	if(argc==8 && rank==0){
 		gen(atoi(argv[4]),atoi(argv[5]),atoi(argv[6]));
 	}
 	
