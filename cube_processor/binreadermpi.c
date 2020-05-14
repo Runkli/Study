@@ -13,17 +13,22 @@ int main(int argc, char *argv[]){
 	int rank,size;
 	int ierr;
 	
-	//generates a default 0 cube if the flag exists
-	if(argc==8 && rank==0){
-		gen(atoi(argv[4]),atoi(argv[5]),atoi(argv[6]));
-	}
-	
 	
 	
 	//MPI Inits
 	MPI_Init(&argc,&argv);
 	MPI_Comm_rank(MPI_COMM_WORLD,&rank);
 	MPI_Comm_size(MPI_COMM_WORLD,&size);
+	
+	
+	//generates a default 0 cube if the flag exists
+	if(argc==8 && rank==0){
+	
+		genInput(atoi(argv[4]),atoi(argv[5]),atoi(argv[6]));
+		//gen(atoi(argv[4]),atoi(argv[5]),atoi(argv[6]));
+	}
+	
+	
 	
 	MPI_Request request[4];
 	MPI_Status status[4];
@@ -48,9 +53,7 @@ int main(int argc, char *argv[]){
 		printf("Current matrix:\n");
 		printmat(fp,r,c,h);
 		fclose(fp);
-		if(argc!=8){
-			genOutput(r,c,h);
-		}
+		genOutput(r,c,h);
 	}
 	
 	MPI_Bcast(&r,1,MPI_INT,0,MPI_COMM_WORLD);
