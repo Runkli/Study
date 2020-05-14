@@ -5,8 +5,7 @@
 void printmat(FILE *fp,int x, int y, int z){
 	int num,i,j,k;
 	fseek(fp,0,SEEK_SET);
-	fread(&num,sizeof(int),1,fp);
-	printf("\nNUMMMM %d\n",num);
+	
 	for(k=0;k<z;k++){
 		for(j=0;j<y;j++){
 			for(i=0;i<x;i++){
@@ -31,21 +30,17 @@ int gen(int x, int y, int z){
 	
 	int i,j,k;
 	
-	int rowdelim = -1;
-	int matdelim = -2;
+	num = 0;
 	
 	for(k=0;k<z;k++){
 		for(i=0;i<y;i++){
 			for(j=0;j<x;j++){
-				num = 0;
 				fwrite(&num,sizeof(int),1,fp);
 				fwrite(&num,sizeof(int),1,fpOut);
 			}
-			//fwrite(&rowdelim,sizeof(int),1,fp);
-			//fwrite(&rowdelim,sizeof(int),1,fpOut);
+			
 		}
-		//fwrite(&matdelim,sizeof(int),1,fp);
-		//fwrite(&matdelim,sizeof(int),1,fpOut);
+		
 	}
 	
 	fwrite(&x,sizeof(int),1,fpMeta);

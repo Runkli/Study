@@ -59,10 +59,12 @@ int main(int argc, char *argv[]){
 	int x,y,z;
 	int offset;
 	
-	int fpIn,fpOut;
+	FILE *fpIn, *fpOut;
 	
-	fpIn = open("in.bin",O_RDONLY);
-	fpOut = open("out.bin",O_WRONLY);
+	fpIn = fopen("in.bin","rb");
+	fpOut = fopen("out.bin","rb+");
+	setvbuf(fpOut,"",_IONBF,0);
+	
 	/*Each rank takes slices that are increments of
 	the num of ranks
 	*/
@@ -70,30 +72,29 @@ int main(int argc, char *argv[]){
 	for(z=z0+rank;z<z1;z=z+size){
 		for(y=y0;y<y1;y++){
 			for(x=x0;x<x1;x++){
-				offset = sizeof(int)*(c*y+x+z*r*c);
+				offset = sizeof(int)*(c*y + x + z*r*c);
 				
-				lseek(fpIn, offset, SEEK_SET);
-				read(fpIn, &num, sizeof(int));
+				fseek(fpIn, offset, SEEK_SET);
+				fread(&num, sizeof(int),1,fpIn);
 				
 				num = proc(num);
 				
-				lseek(fpOut, offset, SEEK_SET);	
-				write(fpOut, &num, sizeof(int));
+				fseek(fpOut, offset, SEEK_SET);	
+				fwrite(&num, sizeof(int),1,fpOut);
 				
 			} 
 		}
 	}
 	
 	
-	//Close files
-	close(fpIn);
-	close(fpOut);
-	
-	//Output the new matrix with the master rank
-	
 	MPI_Barrier(MPI_COMM_WORLD);
 	
-	if(rank==0){
+	fclose(fpIn);
+	fclose(fpOut);
+	
+	if(rank!=0){
+		MPI_Finalize();
+	}else{
 		FILE *fpOut = fopen("out.bin","rb");
 		fseek(fpOut,0,SEEK_SET);
 		
@@ -101,11 +102,9 @@ int main(int argc, char *argv[]){
 		printmat(fpOut,r,c,h);
 	
 		fclose(fpOut);
+		MPI_Finalize();
 		
 	}
-	
-	
-	MPI_Finalize();
 	
 	
 }

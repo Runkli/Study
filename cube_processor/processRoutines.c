@@ -3,6 +3,6 @@
 #include "process.h"
 
 int proc(int v){
-	v = v + 2;
+	v +=5;
 	return v;
 }
