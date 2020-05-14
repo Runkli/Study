@@ -51,5 +51,61 @@ int gen(int x, int y, int z){
 	fclose(fp);
 	fclose(fpOut);
 	
+}
+
+
+int genInput(int x, int y, int z){
+	int num;
+	FILE *fp,*fpMeta;
+	
+	fp = fopen("in.bin","wb");
+	fpMeta = fopen("meta.bin","wb");
+	
+	int i,j,k;
+	
+	num = 0;
+	
+	for(k=0;k<z;k++){
+		for(i=0;i<y;i++){
+			for(j=0;j<x;j++){
+				fwrite(&num,sizeof(int),1,fp);
+			}
+			
+		}
+		
+	}
+	
+	fwrite(&x,sizeof(int),1,fpMeta);
+	fwrite(&y,sizeof(int),1,fpMeta);
+	fwrite(&z,sizeof(int),1,fpMeta);
+	
+	fclose(fpMeta);
+	fclose(fp);
 	
 }
+
+
+
+int genOutput(int x, int y, int z){
+	int num;
+	FILE *fpOut;
+
+	fpOut = fopen("out.bin","wb");
+	
+	int i,j,k;
+	
+	num = 0;
+	
+	for(k=0;k<z;k++){
+		for(i=0;i<y;i++){
+			for(j=0;j<x;j++){
+				fwrite(&num,sizeof(int),1,fpOut);
+			}	
+		}	
+	}
+	fclose(fpOut);	
+
+}
+
+
+

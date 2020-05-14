@@ -14,9 +14,11 @@ int main(int argc, char *argv[]){
 	int ierr;
 	
 	//generates a default 0 cube if the flag exists
-	if(argc==8){
+	if(argc==8 && rank==0){
 		gen(atoi(argv[4]),atoi(argv[5]),atoi(argv[6]));
 	}
+	
+	
 	
 	//MPI Inits
 	MPI_Init(&argc,&argv);
@@ -46,6 +48,9 @@ int main(int argc, char *argv[]){
 		printf("Current matrix:\n");
 		printmat(fp,r,c,h);
 		fclose(fp);
+		if(argc!=8){
+			genOutput(r,c,h);
+		}
 	}
 	
 	MPI_Bcast(&r,1,MPI_INT,0,MPI_COMM_WORLD);
@@ -63,7 +68,7 @@ int main(int argc, char *argv[]){
 	
 	fpIn = fopen("in.bin","rb");
 	fpOut = fopen("out.bin","rb+");
-	setvbuf(fpOut,"",_IONBF,0);
+	setvbuf(fpOut,NULL,_IONBF,0);
 	
 	/*Each rank takes slices that are increments of
 	the num of ranks
@@ -103,8 +108,13 @@ int main(int argc, char *argv[]){
 	
 		fclose(fpOut);
 		MPI_Finalize();
+		if(remove("out.bin")!=0){
+			printf("\nFile not deleted succesfully.\n");
+		}
 		
 	}
+	
+	
 	
 	
 }
