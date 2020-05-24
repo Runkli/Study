@@ -1,18 +1,20 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <mpi.h>
+#include <unistd.h>
 #include "matfuncs.h"
 #include "process.h"
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <unistd.h>
+#include <omp.h>
 
 int main(int argc, char *argv[]){
+
+	double start = MPI_Wtime();
+	
 	int num;
 	
 	int rank,size;
 	int ierr;
-	
+	omp_set_nested(1);
 	
 	
 	//MPI Inits
@@ -56,6 +58,7 @@ int main(int argc, char *argv[]){
 		//genOutput(r,c,h);
 	}
 	
+	
 	MPI_Bcast(&r,1,MPI_INT,0,MPI_COMM_WORLD);
 	MPI_Bcast(&c,1,MPI_INT,0,MPI_COMM_WORLD);
 	MPI_Bcast(&h,1,MPI_INT,0,MPI_COMM_WORLD);
@@ -71,9 +74,14 @@ int main(int argc, char *argv[]){
 	
 	fpIn = fopen("in.bin","rb");
 	
+	int* buffer = (int*)malloc(sizeof(int)*(x1-x0+1));
+	
 	int temp;
 	if(rank==0){
 		fpOut = fopen("out.bin","wb");
+		while(access("out.bin",F_OK)==1){
+			printf("Waiting for file open...\n");
+		}
 	}
 	MPI_Barrier(MPI_COMM_WORLD);
 	if(rank!=0){
@@ -85,23 +93,40 @@ int main(int argc, char *argv[]){
 	/*Each rank takes slices that are increments of
 	the num of ranks
 	*/
-	
-	
+	int buf=0;
+	int tid;
+
 	for(z=rank;z<h;z=z+size){
 		for(y=0;y<c;y++){
 			for(x=0;x<r;x++){
 				offset = sizeof(int)*(c*y + x + z*r*c);
-				
-				fseek(fpIn, offset, SEEK_SET);
-				fread(&num, sizeof(int),1,fpIn);
-				if(z>=z0 && z<z1 && y>=y0 && y<y1 && x>=x0 && x<x1){
-					num = proc(num);
+
+				if(z>=z0 && z<z1 && 
+					y>=y0 && y<y1 && 
+					x>=x0 && x<x1){
+					
+					
+					fseek(fpIn,sizeof(int)*(c*y+z*r*c+x0),SEEK_SET);
+					fread(buffer,sizeof(int),(x1-x0),fpIn);
+					
+					#pragma omp parallel for private(x1,x0)
+					for(int i=0;i<(x1-x0);i++){
+						buffer[i] = proc(buffer[i]);
+					}
+					
+
+					if(x==x1-1){
+						fseek(fpOut,sizeof(int)*(c*y+z*r*c+x0),SEEK_SET);
+						fwrite(buffer,sizeof(int),(x1-x0),fpOut);
+					}
+				}else{
+					fseek(fpIn, offset, SEEK_SET);
+					fread(&num, sizeof(int),1,fpIn);
+					fseek(fpOut, offset, SEEK_SET);	
+					fwrite(&num, sizeof(int),1,fpOut);
 				}
 				
-				fseek(fpOut, offset, SEEK_SET);	
-				fwrite(&num, sizeof(int),1,fpOut);
-				
-			} 
+			}
 		}
 	}
 	
@@ -126,5 +151,9 @@ int main(int argc, char *argv[]){
 		}
 		
 	}
+	
+	double end = MPI_Wtime();
+	
+	printf("\nProcess took: %f seconds\n",end-start);
 	
 }
