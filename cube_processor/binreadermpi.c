@@ -5,10 +5,11 @@
 #include "matfuncs.h"
 #include "process.h"
 #include <omp.h>
+#include <math.h>
 
 int main(int argc, char *argv[]){
 
-	double start = MPI_Wtime();
+	double start_t = MPI_Wtime();
 	
 	int num;
 	
@@ -93,42 +94,40 @@ int main(int argc, char *argv[]){
 	/*Each rank takes slices that are increments of
 	the num of ranks
 	*/
+	int start,end;
 	int buf=0;
 	int tid;
+	int pad = h/size;
+	int rem = h%size;
+	
+	if(rank<rem){
+		start = rank*(pad+1);
+		end = start+pad;
+	}else{
+		start = rank*pad+rem;
+		end = start + (pad-1);
+	}
 
-	for(z=rank;z<h;z=z+size){
+	int* volbuffer = (int*)malloc(sizeof(int)*r*c);
+	int* tempbuffer = (int*)malloc(sizeof(int)*r*c);
+	for(z=start;z<=end;z++){
+		offset=sizeof(int)*(z*r*c);
+		fseek(fpIn,offset,SEEK_SET);
+		fread(tempbuffer,sizeof(int),r*c,fpIn);
+		
+		#pragma omp parallel for collapse(2) private(x,y,z) schedule(static)
 		for(y=0;y<c;y++){
 			for(x=0;x<r;x++){
-				offset = sizeof(int)*(c*y + x + z*r*c);
-
-				if(z>=z0 && z<z1 && 
-					y>=y0 && y<y1 && 
-					x>=x0 && x<x1){
-					
-					
-					fseek(fpIn,sizeof(int)*(c*y+z*r*c+x0),SEEK_SET);
-					fread(buffer,sizeof(int),(x1-x0),fpIn);
-					
-					#pragma omp parallel for private(x1,x0)
-					for(int i=0;i<(x1-x0);i++){
-						buffer[i] = proc(buffer[i]);
-					}
-					
-
-					if(x==x1-1){
-						fseek(fpOut,sizeof(int)*(c*y+z*r*c+x0),SEEK_SET);
-						fwrite(buffer,sizeof(int),(x1-x0),fpOut);
-					}
-				}else{
-					fseek(fpIn, offset, SEEK_SET);
-					fread(&num, sizeof(int),1,fpIn);
-					fseek(fpOut, offset, SEEK_SET);	
-					fwrite(&num, sizeof(int),1,fpOut);
+				if(z>=z0 && z<z1 && y>=y0 && y<y1 && x>=x0 && x<x1){
+					volbuffer[y*c+x] = proc(tempbuffer[y*c+x]);
 				}
-				
 			}
 		}
+		fseek(fpOut,offset,SEEK_SET);
+		fwrite(volbuffer,sizeof(int),r*c,fpOut);
 	}
+		
+	
 	
 	MPI_Barrier(MPI_COMM_WORLD);
 	
@@ -152,8 +151,8 @@ int main(int argc, char *argv[]){
 		
 	}
 	
-	double end = MPI_Wtime();
+	double end_t = MPI_Wtime();
 	
-	printf("\nProcess took: %f seconds\n",end-start);
+	printf("\nProcess took: %f seconds\n",end_t-start_t);
 	
 }
