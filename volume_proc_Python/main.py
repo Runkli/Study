@@ -4,12 +4,12 @@ import numpy as np
 from mpi4py import MPI
 import sys
 import os.path
-from numba import njit
+from numba import njit,prange
 
 @njit
 def proc(arr,z,r,c,x0,x1,y0,y1,z0,z1):
-    for y in range(c):
-        for x in range(r):
+    for y in prange(c):
+        for x in prange(r):
             if(z>=z0 and z<z1 and y>=y0 and y<y1 and 
                 x>=x0 and x<x1):
                 arr[y*c+x] = 0
