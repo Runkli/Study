@@ -6,7 +6,7 @@ import sys
 import os.path
 from numba import njit,prange
 
-@njit
+@njit(parallel=True)
 def proc(arr,z,r,c,x0,x1,y0,y1,z0,z1):
     for y in prange(c):
         for x in prange(r):
