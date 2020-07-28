@@ -1,0 +1,4 @@
+#!/bin/bash
+PROG_NAME=$1
+mpicc -Werror "main.c" "matrixRoutines.c" "processRoutines.c" -fopenmp
+

@@ -1,0 +1,5 @@
+defaults:
+    - coor: single
+
+gen: 1
+ranks: 4
