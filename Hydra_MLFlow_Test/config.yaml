@@ -1,5 +1,6 @@
 defaults:
     - coor: single
 
-gen: 0
+threading: workqueue
+gen: 1
 ranks: 4
