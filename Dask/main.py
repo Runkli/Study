@@ -76,31 +76,8 @@ def main():
 #    f = h5py.File('out.hdf5',mode='w')
 #    d = f.require_dataset('/arr', shape=procDask.shape, dtype=procDask.dtype)
 #    da.store(procDask, d)
-#    fpOut.close()
-#    b = da.from_array(ar,chunks='auto')
     
-    
-#    newb = da.from_array(ar)
-#    
-#    print(newb.compute())
-#    
-#    newb += da.exp(b)[z0:z1,y0:y1,x0:x1]
-#    
-#    
-#    result = newb.compute()
-#    c = da.from_array(result)
-#    print('after proc',c.compute())
-    
-#    da.to_hdf5('out.hdf5',{'/a': c}) 
-    
-#    fpIn.close()
-    
-#    fpOut = h5py.File('out.hdf5',mode='r')
-#    ar = fpOut['/a']
-#    dd = da.from_array(ar,chunks='auto')
-#    print(dd.compute())
-   
-#    os.remove('out.hdf5')
+#   
     client.shutdown()
     
 if __name__ == "__main__":
