@@ -5,10 +5,24 @@
 import h5py
 import dask.array as da
 from dask import delayed
-from dask.distributed import LocalCluster
+import dask.dataframe as dd
+from dask.distributed import Client, LocalCluster
+from dask import delayed
 import numpy as np
 import sys
 import os
+
+
+def proc(arr,z,r,c,x0,x1,y0,y1,z0,z1):
+    
+    for y in range(c):
+        for x in range(r):
+            if(z>=z0 and z<z1 and y>=y0 and y<y1 and 
+                x>=x0 and x<x1):
+#                arr[y*c+x] += 5
+                arr[x][y]+=5
+        
+    return arr
 
 def main():
 
@@ -30,7 +44,7 @@ def main():
         
         a = da.ones((r,c,h),dtype=np.int16)
         
-        da.to_hdf5('test.hdf5',{'/a': a})
+        da.to_hdf5('in.hdf5',{'/a': a})
         np.array((r,c,h),dtype=np.int16).tofile(filepath+'meta.bin')
         
  
@@ -41,33 +55,55 @@ def main():
     h = dims[2]
     
     
-    fpIn = h5py.File('test.hdf5',mode='r+')
+    fpIn = h5py.File('in.hdf5',mode='r+')
     
+    procArrays=[]
     ar = fpIn['/a']
-    b = da.from_array(ar)
+#    print(ar.shape)
+#    print('types: ',type(ar),type(ar[0]))
+    for z in range(h):    
+        slic = ar[z]
+        slic = delayed(proc)(slic,z,r,c,x0,x1,y0,y1,z0,z1).compute()
+        procArrays.append(slic)
+
+    procDask = da.stack(procArrays)
+    print(procDask)
+    print(procDask.compute())  
+    
+
+    da.to_hdf5('out.hdf5',{'/arr',procDask})
+    
+#    f = h5py.File('out.hdf5',mode='w')
+#    d = f.require_dataset('/arr', shape=procDask.shape, dtype=procDask.dtype)
+#    da.store(procDask, d)
+#    fpOut.close()
+#    b = da.from_array(ar,chunks='auto')
     
     
-    newb = da.from_array(ar)
-    
-    newb += da.exp(b)[z0:z1,y0:y1,x0:x1]
-    
-    
-    result = newb.compute()
-    c = da.from_array(result)
+#    newb = da.from_array(ar)
+#    
+#    print(newb.compute())
+#    
+#    newb += da.exp(b)[z0:z1,y0:y1,x0:x1]
+#    
+#    
+#    result = newb.compute()
+#    c = da.from_array(result)
 #    print('after proc',c.compute())
     
-    da.to_hdf5('out.hdf5',{'/a': c}) 
+#    da.to_hdf5('out.hdf5',{'/a': c}) 
     
-    fpIn.close()
+#    fpIn.close()
     
-    fpOut = h5py.File('out.hdf5',mode='r')
-    ar = fpOut['/a']
-    dd = da.from_array(ar)
-    print(dd.compute())
+#    fpOut = h5py.File('out.hdf5',mode='r')
+#    ar = fpOut['/a']
+#    dd = da.from_array(ar,chunks='auto')
+#    print(dd.compute())
    
-    os.remove('out.hdf5')
+#    os.remove('out.hdf5')
+    client.shutdown()
     
 if __name__ == "__main__":
-    client = LocalCluster(n_workers=4, ip='127.0.0.1')
-    main()
+	client = Client()
+	main()
     
