@@ -78,9 +78,9 @@ def main():
 #    da.store(procDask, d)
     
 #   
-    client.shutdown()
+    #client.shutdown()
     
 if __name__ == "__main__":
-	client = Client()
+	#client = Client()
 	main()
     
