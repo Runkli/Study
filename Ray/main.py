@@ -2,11 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
-from mpi4py import MPI
-from numba import njit,prange,threading_layer,config
-from mlflow import log_metric, log_param, set_tracking_uri, start_run, set_experiment
-import os
-import time
 import sys
 import ray
 
@@ -15,8 +10,8 @@ import ray
 def proc(arr,z,r,c,x0,x1,y0,y1,z0,z1):
     newArr = np.empty_like(arr)
 
-    for y in prange(c):
-        for x in prange(r):
+    for y in range(c):
+        for x in range(r):
             if(z>=z0 and z<z1 and y>=y0 and y<y1 and 
                 x>=x0 and x<x1):
                 newArr[y*c+x] = arr[y*c+x] + 5
@@ -90,6 +85,5 @@ if __name__ == "__main__":
     ray.init()
     main()
     ray.shutdown()
-    
     
     
